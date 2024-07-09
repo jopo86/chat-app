@@ -208,6 +208,15 @@ void TextButton::updateTextPos()
     }
 }
 
+void TextButton::AddToRenderer(Onyx::Renderer* renderer, std::initializer_list<TextButton*> buttons)
+{
+    for (TextButton* btn : buttons)
+    {
+        renderer->add(btn->m_button);
+        renderer->add(btn->m_text);
+    }
+}
+
 void TextButton::Update(std::initializer_list<TextButton*> buttons)
 {
     for (TextButton* btn : buttons) btn->update();

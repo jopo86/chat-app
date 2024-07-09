@@ -2,6 +2,8 @@
 #include <initializer_list>
 
 #include <Onyx/Core.h>
+#pragma once
+
 #include <Onyx/UiRenderable.h>
 #include <Onyx/TextRenderable.h>
 #include <Onyx/Math.h>
@@ -37,6 +39,7 @@ public:
     const Onyx::Math::Vec2& getPosition() const;
     float getScale() const;
 
+    static void AddToRenderer(Onyx::Renderer* renderer, std::initializer_list<TextButton*> buttons);
     static void Update(std::initializer_list<TextButton*> buttons);
     static void SetWindow(Onyx::Window* window, std::initializer_list<TextButton*> buttons);
     static void SetNormalCursor(Onyx::Cursor* cursor, std::initializer_list<TextButton*> buttons);

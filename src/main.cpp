@@ -21,7 +21,7 @@ namespace Color
 
 int main()
 {
-    Onyx::ErrorHandler errorHandler(true, true);
+    Onyx::ErrorHandler errorHandler(true, true, Onyx::Warning::Severity::Med);
     Onyx::Init(errorHandler);
     Onyx::SetResourcePath("../resources/");
     Garnet::Init(true);
@@ -51,35 +51,34 @@ int main()
 
     Onyx::Cursor arrowCursor = Onyx::Cursor::Standard(Onyx::CursorType::Arrow);
     Onyx::Cursor handCursor = Onyx::Cursor::Standard(Onyx::CursorType::Hand);
+    Onyx::Cursor ibeamCursor = Onyx::Cursor::Standard(Onyx::CursorType::Ibeam);
 
-    Onyx::Font roboto = Onyx::Font::Load(Onyx::Resources("fonts/Roboto/Roboto-Regular.ttf"), 48);
+    Onyx::Font roboto = Onyx::Font::Load(Onyx::Resources("fonts/Roboto/Roboto-Light.ttf"), 24);
 
-    TextButton buttonA("Button A", roboto, Align::BottomLeft, Vec4::DarkGray(), Vec4::LightGray(), Vec4::White(), 500, 200, 20);
-    buttonA.setPosition(Vec2(SCR_WIDTH / 2, SCR_HEIGHT / 2));
-    buttonA.addToRenderer(&renderer);
+    TextBox textBox(roboto, Align::TopLeft, Color::GRAY_0, Color::GRAY_1, Vec4::White(), Vec4::White(), Vec4::LightGray(), "Enter text here", 600, 100);
+    textBox.setPosition(Vec2(SCR_WIDTH / 2, SCR_HEIGHT / 2));
 
-    TextButton buttonB("Button B ", roboto, Align::TopRight, Vec4::DarkGray(), Vec4::LightGray(), Vec4::White(), 500, 200, 20);
-    buttonB.setPosition(Vec2(SCR_WIDTH / 2, SCR_HEIGHT / 2 + buttonA.getHeight() / 2 + buttonB.getHeight() / 2 + 20));
-    buttonB.addToRenderer(&renderer);
+    // TextButton::AddToRenderer(&renderer,        { &buttonA, &buttonB, &buttonC });
+    // TextButton::SetWindow(&window,              { &buttonA, &buttonB, &buttonC });
+    // TextButton::SetNormalCursor(&arrowCursor,   { &buttonA, &buttonB, &buttonC });
+    // TextButton::SetHoverCursor(&handCursor,     { &buttonA, &buttonB, &buttonC });
+    // TextButton::SetInputHandler(&input,         { &buttonA, &buttonB, &buttonC });
 
-    TextButton buttonC("Button C ", roboto, Align::BottomRight, Vec4::DarkGray(), Vec4::LightGray(), Vec4::White(), 500, 200, 20);
-    buttonC.setPosition(Vec2(SCR_WIDTH / 2, SCR_HEIGHT / 2 - buttonA.getHeight() / 2 - buttonC.getHeight() / 2 - 20));
-    buttonC.addToRenderer(&renderer);
-
-    TextButton::SetWindow(&window,              { &buttonA, &buttonB, &buttonC });
-    TextButton::SetNormalCursor(&arrowCursor,   { &buttonA, &buttonB, &buttonC });
-    TextButton::SetHoverCursor(&handCursor,     { &buttonA, &buttonB, &buttonC });
-    TextButton::SetInputHandler(&input,         { &buttonA, &buttonB, &buttonC });
+    TextBox::AddToRenderer(&renderer,           { &textBox });
+    TextBox::SetWindow(&window,                 { &textBox });
+    TextBox::SetNormalCursor(&arrowCursor,      { &textBox });
+    TextBox::SetHoverCursor(&ibeamCursor,       { &textBox });
+    TextBox::SetInputHandler(&input,            { &textBox });
 
     while (window.isOpen())
     {
         input.update();
         if (input.isKeyTapped(Onyx::Key::Escape)) window.close();
 
-        TextButton::Update({ &buttonA, &buttonB, &buttonC });
+        // TextButton::Update({ &buttonA, &buttonB, &buttonC });
+        TextBox::Update({ &textBox });
 
         cam.update();
-
 
         window.startRender();
         renderer.render();

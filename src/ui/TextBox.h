@@ -1,58 +1,88 @@
-// #include <string>
-// #include <initializer_list>
+#pragma once
 
-// #include <Onyx/Core.h>
-// #include <Onyx/UiRenderable.h>
-// #include <Onyx/TextRenderable.h>
-// #include <Onyx/Math.h>
-// #include <Onyx/Camera.h>
-// #include <Onyx/Renderer.h>
+#include <string>
+#include <initializer_list>
 
-// class TextBox
-// {
-// public:
-//     TextBox();
-//     TextBox(const std::string& text, Onyx::Font& font, const Onyx::Math::Vec4& bgColor, const Onyx::Math::Vec4& bgHoverColor, const Onyx::Math::Vec4& textColor, int padding = 10);
-//     TextBox(const std::string& text, Onyx::Font& font, const Onyx::Math::Vec4& bgColor, const Onyx::Math::Vec4& bgHoverColor, const Onyx::Math::Vec4& textColor, int bgWidth, int bgHeight);
+#include <Onyx/Core.h>
+#include <Onyx/UiRenderable.h>
+#include <Onyx/TextRenderable.h>
+#include <Onyx/Math.h>
+#include <Onyx/Camera.h>
+#include <Onyx/Renderer.h>
 
-//     void update();
-//     void render(const Onyx::Math::Mat4& ortho);
-//     void addToRenderer(Onyx::Renderer* renderer);
+#include "Align.h"
 
-//     void setPosition(const Onyx::Math::Vec2& pos);
-//     void setScale(float scale);
-//     void setButtonColor(const Onyx::Math::Vec4& color);
-//     void setTextColor(const Onyx::Math::Vec4& color);
+class TextBox
+{
+public:
+    TextBox();
 
-//     void setWindow(Onyx::Window* window);
-//     void setNormalCursor(Onyx::Cursor* cursor);
-//     void setHoverCursor(Onyx::Cursor* cursor);
-//     void setInputHandler(Onyx::InputHandler* input);
+    TextBox(Onyx::Font& font, Align align, const Onyx::Math::Vec4& bgColor, 
+    const Onyx::Math::Vec4& bgHoverColor, const Onyx::Math::Vec4& cursorColor, 
+    const Onyx::Math::Vec4& textColor, const Onyx::Math::Vec4& placeholderTextColor, 
+    const std::string& placeholderText, int padding = 10);
 
-//     bool isHovered() const;
-//     int getWidth() const;
-//     int getHeight() const;
-//     const Onyx::Math::Vec2& getPosition() const;
-//     float getScale() const;
+    TextBox(Onyx::Font& font, Align align, const Onyx::Math::Vec4& bgColor, 
+    const Onyx::Math::Vec4& bgHoverColor, const Onyx::Math::Vec4& cursorColor, 
+    const Onyx::Math::Vec4& textColor, const Onyx::Math::Vec4& placeholderTextColor, 
+    const std::string& placeholderText, int bgWidth, int bgHeight, int padding = 10);
 
-//     static void Update(std::initializer_list<TextBox*> buttons);
-//     static void SetWindow(Onyx::Window* window, std::initializer_list<TextBox*> buttons);
-//     static void SetNormalCursor(Onyx::Cursor* cursor, std::initializer_list<TextBox*> buttons);
-//     static void SetHoverCursor(Onyx::Cursor* cursor, std::initializer_list<TextBox*> buttons);
-//     static void SetInputHandler(Onyx::InputHandler* handler, std::initializer_list<TextBox*> buttons);
+    void update();
+    void render(const Onyx::Math::Mat4& ortho);
+    void addToRenderer(Onyx::Renderer* renderer);
+    void focus();
+    void unfocus();
 
-// private:
-//     int m_bgWidth, m_bgHeight;
-//     int m_textWidth, m_textHeight;
-//     Onyx::Math::Vec4 m_bgColor, m_bgHoverColor;
-//     Onyx::UiRenderable m_button;
-//     Onyx::TextRenderable m_text;
-//     bool m_hover;
+    void setPosition(const Onyx::Math::Vec2& pos);
+    void setScale(float scale);
+    void setBackgroundColor(const Onyx::Math::Vec4& color);
+    void setCusorColor(const Onyx::Math::Vec4& color);
+    void setTextColor(const Onyx::Math::Vec4& color);
+    void setPlaceholderTextColor(const Onyx::Math::Vec4& color);
 
-//     Onyx::Window* m_win;
-//     Onyx::Cursor* m_normCursor, * m_hoverCursor;
-//     Onyx::InputHandler* m_input;
+    void setWindow(Onyx::Window* window);
+    void setNormalCursor(Onyx::Cursor* cursor);
+    void setHoverCursor(Onyx::Cursor* cursor);
+    void setInputHandler(Onyx::InputHandler* input);
 
-//     void updateTextDims();
-//     void updateTextPos();
-// };
+    bool isHovered() const;
+    bool isFocused() const;
+    const std::string& getText() const;
+    int getWidth() const;
+    int getHeight() const;
+    const Onyx::Math::Vec2& getPosition() const;
+    float getScale() const;
+
+    static void Update(std::initializer_list<TextBox*> textBoxes);
+    static void AddToRenderer(Onyx::Renderer* renderer, std::initializer_list<TextBox*> textBoxes);
+    static void SetWindow(Onyx::Window* window, std::initializer_list<TextBox*> textBoxes);
+    static void SetNormalCursor(Onyx::Cursor* cursor, std::initializer_list<TextBox*> textBoxes);
+    static void SetHoverCursor(Onyx::Cursor* cursor, std::initializer_list<TextBox*> textBoxes);
+    static void SetInputHandler(Onyx::InputHandler* handler, std::initializer_list<TextBox*> textBoxes);
+
+private:
+    int m_bgWidth, m_bgHeight;
+    int m_cursorWidth, m_cursorHeight;
+    int m_textWidth, m_textHeight;
+    int m_plTextWidth;
+    int m_padding;
+    Align m_align;
+    Onyx::Math::Vec4 m_bgColor, m_bgHoverColor;
+    Onyx::UiRenderable m_bg;
+    Onyx::UiRenderable m_cursor;
+    Onyx::TextRenderable m_plText;
+    Onyx::TextRenderable m_text;
+    bool m_hover, m_focus;
+    float m_cursorTimer;
+
+    Onyx::Window* m_win;
+    Onyx::Cursor* m_normCursor, * m_hoverCursor;
+    Onyx::InputHandler* m_input;
+
+    void updateTextDims();
+    void updateTextPos();
+    void updateCursorDims();
+    void updateCursorPos();
+    void updatePlTextDims();
+    void updatePlTextPos();
+};
