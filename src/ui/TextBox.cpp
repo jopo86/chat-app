@@ -4,8 +4,9 @@
 using Onyx::Math::IVec2, Onyx::Math::Vec2, Onyx::Math::Vec4;
 
 #define CURSOR_WIDTH 1
-#define CURSOR_SPACING 2
+#define CURSOR_SPACING 0
 #define CURSOR_BLINK_INTERVAL 0.5f
+#define CURSOR_SHOW_LOCK_DURATION 0.35f
 
 TextBox::TextBox()
 {
@@ -14,8 +15,9 @@ TextBox::TextBox()
     m_textWidth = m_textHeight = 0;
     m_plTextWidth = 0;
     m_padding = 0;
+    m_cursorIdx = 0;
     m_hover = m_focus = false;
-    m_cursorTimer = 0.0f;
+    m_cursorTimer = m_cursorShowLockTimer = 0.0f;
     m_win = nullptr;
     m_normCursor = m_hoverCursor = nullptr;
     m_input = nullptr;
@@ -30,6 +32,7 @@ TextBox::TextBox(Onyx::Font& font, Align align, const Vec4& bgColor, const Vec4&
 
     m_align = align;
     m_padding = padding;
+    m_cursorIdx = 0;
 
     m_text = Onyx::TextRenderable("", font, textColor);
     m_text.setZIndex(2);
@@ -54,7 +57,7 @@ TextBox::TextBox(Onyx::Font& font, Align align, const Vec4& bgColor, const Vec4&
     updateTextPos();
 
     m_hover = m_focus = false;
-    m_cursorTimer = 0.0f;
+    m_cursorTimer = m_cursorShowLockTimer = 0.0f;
     m_win = nullptr;
     m_normCursor = m_hoverCursor = nullptr;
     m_input = nullptr;
@@ -69,6 +72,7 @@ TextBox::TextBox(Onyx::Font& font, Align align, const Vec4& bgColor, const Vec4&
 
     m_align = align;
     m_padding = padding;
+    m_cursorIdx = 0;
 
     m_text = Onyx::TextRenderable("", font, textColor);
     m_text.setZIndex(2);
@@ -93,7 +97,7 @@ TextBox::TextBox(Onyx::Font& font, Align align, const Vec4& bgColor, const Vec4&
     updateTextPos();
 
     m_hover = m_focus = false;
-    m_cursorTimer = 0.0f;
+    m_cursorTimer = m_cursorShowLockTimer = 0.0f;
     m_win = nullptr;
     m_normCursor = m_hoverCursor = nullptr;
     m_input = nullptr;
@@ -102,6 +106,8 @@ TextBox::TextBox(Onyx::Font& font, Align align, const Vec4& bgColor, const Vec4&
 void TextBox::update()
 {
     if (!m_input) return;
+
+    m_cursorShowLockTimer = std::max(m_cursorShowLockTimer - m_win->getDeltaTime(), 0.0);
 
     double x = m_input->getMousePos().getX(), y = m_input->getMousePos().getY();
     if (x >= m_bg.getPosition().getX() - m_bgWidth / 2.0f &&
@@ -128,7 +134,7 @@ void TextBox::update()
 
     if (m_focus)
     {
-        if (m_win)
+        if (m_win && !m_cursorShowLockTimer)
         {
             m_cursorTimer += m_win->getDeltaTime();
             if (m_cursorTimer >= CURSOR_BLINK_INTERVAL)
@@ -138,35 +144,66 @@ void TextBox::update()
             }
         }
 
+        bool shouldUpdateCursorPos = false;
+
         for (char c : ck::all)
         {
-            if (m_input->isKeyTapped(ck::ctok(c)) || m_input->isKeyRepeated(ck::ctok(c)))
+            if (m_input->isKeyTappedOrRepeated(ck::ctok(c)))
             {
+                m_cursorShowLockTimer = CURSOR_SHOW_LOCK_DURATION;
                 m_cursor.show();
                 bool shift = m_input->isKeyDown(Onyx::Key::LeftShift) || 
                     m_input->isKeyDown(Onyx::Key::RightShift) ||
                     m_input->IsCapsLockOn();
                 if (shift) c = ck::shift(c);
-                m_text.setText(m_text.getText() + c);
+                addChar(c);
+                m_cursorIdx++;
                 updateTextDims();
                 updateTextPos();
-                updateCursorPos();
                 updatePlTextPos();
+                shouldUpdateCursorPos = true;
             }
         }
 
-        if (m_input->isKeyTapped(Onyx::Key::Backspace) || m_input->isKeyRepeated(Onyx::Key::Backspace))
+        if (m_input->isKeyTappedOrRepeated(Onyx::Key::Backspace))
         {
             m_cursor.show();
-            if (m_text.getText().size() > 0)
+            m_cursorShowLockTimer = CURSOR_SHOW_LOCK_DURATION;
+            if (m_cursorIdx > 0)
             {
-                m_text.setText(m_text.getText().substr(0, m_text.getText().size() - 1));
+                rmChar();
+                m_cursorIdx--;
                 updateTextDims();
                 updateTextPos();
-                updateCursorPos();
                 updatePlTextPos();
+                shouldUpdateCursorPos = true;
             }
         }
+
+        if (m_input->isKeyTappedOrRepeated(Onyx::Key::ArrowLeft))
+        {
+            m_cursor.show();
+            m_cursorShowLockTimer = CURSOR_SHOW_LOCK_DURATION;
+
+            if (m_cursorIdx > 0)
+            {
+                m_cursorIdx--;
+                shouldUpdateCursorPos = true;
+            }
+        }
+        if (m_input->isKeyTappedOrRepeated(Onyx::Key::ArrowRight))
+        {
+            m_cursor.show();
+            m_cursorShowLockTimer = CURSOR_SHOW_LOCK_DURATION;
+
+            if (m_cursorIdx < m_text.getText().length())
+            {
+                m_cursorIdx++;
+                shouldUpdateCursorPos = true;
+            }
+        }
+
+        if (shouldUpdateCursorPos) updateCursorPos();
     }
 }
 
@@ -353,7 +390,8 @@ void TextBox::updateCursorDims()
 
 void TextBox::updateCursorPos()
 {
-    m_cursor.setPosition(m_text.getPosition() + Vec2(m_textWidth + CURSOR_SPACING, m_textHeight / 2));
+    int subWidth = m_text.getFont().getStringWidth(m_text.getText().substr(0, m_cursorIdx));
+    m_cursor.setPosition(m_text.getPosition() + Vec2(subWidth + CURSOR_SPACING, m_textHeight / 2));
 }
 
 void TextBox::updatePlTextDims()
@@ -425,6 +463,17 @@ void TextBox::SetInputHandler(Onyx::InputHandler* handler, std::initializer_list
     for (TextBox* tb : textBoxes) tb->setInputHandler(handler);
 }
 
+void TextBox::addChar(char c)
+{
+    m_text.setText(m_text.getText().substr(0, m_cursorIdx) + c + m_text.getText().substr(m_cursorIdx));
+}
+
+void TextBox::rmChar()
+{
+    m_text.setText(m_text.getText().substr(0, m_cursorIdx - 1) + m_text.getText().substr(m_cursorIdx));
+}
+
 #undef CURSOR_WIDTH
 #undef CURSOR_SPACING
 #undef CURSOR_BLINK_INTERVAL
+#undef CURSOR_SHOW_LOCK_DURATION

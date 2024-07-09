@@ -66,6 +66,7 @@ private:
     int m_textWidth, m_textHeight;
     int m_plTextWidth;
     int m_padding;
+    int m_cursorIdx;
     Align m_align;
     Onyx::Math::Vec4 m_bgColor, m_bgHoverColor;
     Onyx::UiRenderable m_bg;
@@ -73,7 +74,7 @@ private:
     Onyx::TextRenderable m_plText;
     Onyx::TextRenderable m_text;
     bool m_hover, m_focus;
-    float m_cursorTimer;
+    float m_cursorTimer, m_cursorShowLockTimer;
 
     Onyx::Window* m_win;
     Onyx::Cursor* m_normCursor, * m_hoverCursor;
@@ -85,4 +86,7 @@ private:
     void updateCursorPos();
     void updatePlTextDims();
     void updatePlTextPos();
+
+    void addChar(char c);
+    void rmChar();
 };
