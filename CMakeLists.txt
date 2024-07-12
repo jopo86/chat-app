@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/)
 
-add_compile_options(-Wno-volatile)
+add_compile_options(-Wno-volatile -Wno-delete-incomplete)
 
 project(chat-app)
 

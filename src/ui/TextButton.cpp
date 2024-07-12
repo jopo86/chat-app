@@ -12,20 +12,20 @@ TextButton::TextButton()
     m_input = nullptr;
 }
 
-TextButton::TextButton(const std::string& text, Onyx::Font& font, Align textAlign, const Vec4& btnColor, const Vec4& btnHoverColor, const Vec4& textColor, int padding)
+TextButton::TextButton(const std::string& text, Onyx::Font& font, Align textAlign, const Vec4& btnColor, const Vec4& btnHoverColor, const Vec4& textColor, int padding, int zIndex)
 {
     m_btnColor = btnColor;
     m_btnHoverColor = btnHoverColor;
     m_align = textAlign;
     m_padding = padding;
     m_text = Onyx::TextRenderable(text, font, textColor);
-    m_text.setZIndex(2);
+    m_text.setZIndex(zIndex + 2);
     m_textWidth = m_text.getWidth();
     m_textHeight = font.getStringHeight("A");
     m_btnWidth = m_textWidth + padding * 2;
     m_btnHeight = m_textHeight + padding * 2;
     m_button = Onyx::UiRenderable::ColoredQuad(m_btnWidth, m_btnHeight, btnColor);
-    m_button.setZIndex(1);
+    m_button.setZIndex(zIndex + 1);
     updateTextPos();
     m_hover = false;
     m_win = nullptr;
@@ -33,20 +33,20 @@ TextButton::TextButton(const std::string& text, Onyx::Font& font, Align textAlig
     m_input = nullptr;
 }
 
-TextButton::TextButton(const std::string& text, Onyx::Font& font, Align textAlign, const Vec4& btnColor, const Vec4& btnHoverColor, const Vec4& textColor, int btnWidth, int btnHeight, int padding)
+TextButton::TextButton(const std::string& text, Onyx::Font& font, Align textAlign, const Vec4& btnColor, const Vec4& btnHoverColor, const Vec4& textColor, int btnWidth, int btnHeight, int padding, int zIndex)
 {
     m_btnColor = btnColor;
     m_btnHoverColor = btnHoverColor;
     m_align = textAlign;
     m_padding = padding;
     m_text = Onyx::TextRenderable(text, font, textColor);
-    m_text.setZIndex(2);
+    m_text.setZIndex(zIndex + 2);
     m_textWidth = m_text.getWidth();
     m_textHeight = font.getStringHeight("A");
     m_btnWidth = btnWidth;
     m_btnHeight = btnHeight;
     m_button = Onyx::UiRenderable::ColoredQuad(m_btnWidth, m_btnHeight, btnColor);
-    m_button.setZIndex(1);
+    m_button.setZIndex(zIndex + 1);
     updateTextPos();
     m_hover = false;
     m_win = nullptr;
@@ -56,7 +56,7 @@ TextButton::TextButton(const std::string& text, Onyx::Font& font, Align textAlig
 
 void TextButton::update()
 {
-    if (m_input == nullptr) return;
+    if (m_input == nullptr || isHidden()) return;
 
     double x = m_input->getMousePos().getX(), y = m_input->getMousePos().getY();
     if (x >= m_button.getPosition().getX() - m_btnWidth / 2.0f &&
@@ -89,6 +89,18 @@ void TextButton::addToRenderer(Onyx::Renderer* renderer)
 {
     renderer->add(m_button);
     renderer->add(m_text);
+}
+
+void TextButton::hide()
+{
+    m_button.hide();
+    m_text.hide();
+}
+
+void TextButton::show()
+{
+    m_button.show();
+    m_text.show();
 }
 
 void TextButton::setPosition(const Vec2& pos)
@@ -143,9 +155,22 @@ void TextButton::setInputHandler(Onyx::InputHandler* input)
     m_input = input;
 }
 
+void TextButton::setAllPtrs(Onyx::Window* window, Onyx::Cursor* normCursor, Onyx::Cursor* hoverCursor, Onyx::InputHandler* input)
+{
+    m_win = window;
+    m_normCursor = normCursor;
+    m_hoverCursor = hoverCursor;
+    m_input = input;
+}
+
 bool TextButton::isHovered() const
 {
     return m_hover;
+}
+
+bool TextButton::isHidden() const
+{
+    return m_button.isHidden();
 }
 
 int TextButton::getWidth() const
@@ -240,4 +265,9 @@ void TextButton::SetHoverCursor(Onyx::Cursor* cursor, std::initializer_list<Text
 void TextButton::SetInputHandler(Onyx::InputHandler* handler, std::initializer_list<TextButton*> buttons)
 {    
     for (TextButton* btn : buttons) btn->setInputHandler(handler);
+}
+
+void TextButton::SetAllPtrs(Onyx::Window* window, Onyx::Cursor* normCursor, Onyx::Cursor* hoverCursor, Onyx::InputHandler* input, std::initializer_list<TextButton*> buttons)
+{
+    for (TextButton* btn : buttons) btn->setAllPtrs(window, normCursor, hoverCursor, input);
 }

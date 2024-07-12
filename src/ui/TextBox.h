@@ -32,21 +32,28 @@ public:
     void addToRenderer(Onyx::Renderer* renderer);
     void focus();
     void unfocus();
+    void hide();
+    void show();
 
     void setPosition(const Onyx::Math::Vec2& pos);
     void setScale(float scale);
     void setBackgroundColor(const Onyx::Math::Vec4& color);
-    void setCusorColor(const Onyx::Math::Vec4& color);
+    void setCursorColor(const Onyx::Math::Vec4& color);
     void setTextColor(const Onyx::Math::Vec4& color);
+    void setText(const std::string& text);
     void setPlaceholderTextColor(const Onyx::Math::Vec4& color);
+    void setPlaceholderText(const std::string& text);
+    void setAlign(Align align);
 
     void setWindow(Onyx::Window* window);
     void setNormalCursor(Onyx::Cursor* cursor);
     void setHoverCursor(Onyx::Cursor* cursor);
     void setInputHandler(Onyx::InputHandler* input);
+    void setAllPtrs(Onyx::Window* window, Onyx::Cursor* normCursor, Onyx::Cursor* hoverCursor, Onyx::InputHandler* input);
 
     bool isHovered() const;
     bool isFocused() const;
+    bool isHidden() const;
     const std::string& getText() const;
     int getWidth() const;
     int getHeight() const;
@@ -59,6 +66,7 @@ public:
     static void SetNormalCursor(Onyx::Cursor* cursor, std::initializer_list<TextBox*> textBoxes);
     static void SetHoverCursor(Onyx::Cursor* cursor, std::initializer_list<TextBox*> textBoxes);
     static void SetInputHandler(Onyx::InputHandler* handler, std::initializer_list<TextBox*> textBoxes);
+    static void SetAllPtrs(Onyx::Window* window, Onyx::Cursor* normCursor, Onyx::Cursor* hoverCursor, Onyx::InputHandler* input, std::initializer_list<TextBox*> textBoxes);
 
 private:
     int m_bgWidth, m_bgHeight;
@@ -73,6 +81,7 @@ private:
     Onyx::UiRenderable m_cursor;
     Onyx::TextRenderable m_plText;
     Onyx::TextRenderable m_text;
+    Onyx::Shader m_textShader, m_plTextShader;
     bool m_hover, m_focus;
     float m_cursorTimer, m_cursorShowLockTimer;
 

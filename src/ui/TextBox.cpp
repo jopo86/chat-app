@@ -34,17 +34,27 @@ TextBox::TextBox(Onyx::Font& font, Align align, const Vec4& bgColor, const Vec4&
     m_padding = padding;
     m_cursorIdx = 0;
 
-    m_text = Onyx::TextRenderable("", font, textColor);
+    m_bgWidth = m_plTextWidth + padding * 2;
+    m_bgHeight = m_textHeight + padding * 2;
+
+    m_textShader = Onyx::Shader::LoadSource(Onyx::Resources("shaders/src/UI_Text_Boundary.glsl"));
+    m_textShader.use();
+    m_textShader.setVec2("u_boundaryMid", Vec2(0.0f, 0.0f));
+    m_textShader.setVec2("u_boundarySize", Vec2(m_bgWidth - padding * 2, m_bgHeight - padding * 2));
+
+    m_plTextShader = Onyx::Shader::LoadSource(Onyx::Resources("shaders/src/UI_Text_Boundary.glsl"));
+    m_plTextShader.use();
+    m_plTextShader.setVec2("u_boundaryMid", Vec2(0.0f, 0.0f));
+    m_plTextShader.setVec2("u_boundarySize", Vec2(m_bgWidth - padding * 2, m_bgHeight - padding * 2));
+
+    m_text = Onyx::TextRenderable("", font, textColor, m_textShader);
     m_text.setZIndex(2);
     m_textWidth = m_text.getWidth();
     m_textHeight = font.getStringHeight("A");
 
-    m_plText = Onyx::TextRenderable(plText, font, plTextColor);
+    m_plText = Onyx::TextRenderable(plText, font, plTextColor, m_plTextShader);
     m_plText.setZIndex(2);
     m_plTextWidth = m_plText.getWidth();
-
-    m_bgWidth = m_plTextWidth + padding * 2;
-    m_bgHeight = m_textHeight + padding * 2;
     m_bg = Onyx::UiRenderable::ColoredQuad(m_bgWidth, m_bgHeight, bgColor);
     m_bg.setZIndex(1);
 
@@ -74,17 +84,27 @@ TextBox::TextBox(Onyx::Font& font, Align align, const Vec4& bgColor, const Vec4&
     m_padding = padding;
     m_cursorIdx = 0;
 
-    m_text = Onyx::TextRenderable("", font, textColor);
+    m_bgWidth = bgWidth;
+    m_bgHeight = bgHeight;
+
+    m_textShader = Onyx::Shader::LoadSource(Onyx::Resources("shaders/src/UI_Text_Boundary.glsl"));
+    m_textShader.use();
+    m_textShader.setVec2("u_boundaryMid", Vec2(0.0f, 0.0f));
+    m_textShader.setVec2("u_boundarySize", Vec2(m_bgWidth - m_padding * 2, m_bgHeight - m_padding * 2));
+
+    m_plTextShader = Onyx::Shader::LoadSource(Onyx::Resources("shaders/src/UI_Text_Boundary.glsl"));
+    m_plTextShader.use();
+    m_plTextShader.setVec2("u_boundaryMid", Vec2(0.0f, 0.0f));
+    m_plTextShader.setVec2("u_boundarySize", Vec2(m_bgWidth - m_padding * 2, m_bgHeight - m_padding * 2));
+
+    m_text = Onyx::TextRenderable("", font, textColor, m_textShader);
     m_text.setZIndex(2);
     m_textWidth = m_text.getWidth();
     m_textHeight = font.getStringHeight("A");
 
-    m_plText = Onyx::TextRenderable(plText, font, plTextColor);
+    m_plText = Onyx::TextRenderable(plText, font, plTextColor, m_plTextShader);
     m_plText.setZIndex(2);
     m_plTextWidth = m_plText.getWidth();
-
-    m_bgWidth = bgWidth;
-    m_bgHeight = bgHeight;
     m_bg = Onyx::UiRenderable::ColoredQuad(m_bgWidth, m_bgHeight, bgColor);
     m_bg.setZIndex(1);
 
@@ -105,7 +125,7 @@ TextBox::TextBox(Onyx::Font& font, Align align, const Vec4& bgColor, const Vec4&
 
 void TextBox::update()
 {
-    if (!m_input) return;
+    if (!m_input || isHidden()) return;
 
     m_cursorShowLockTimer = std::max(m_cursorShowLockTimer - m_win->getDeltaTime(), 0.0);
 
@@ -150,18 +170,41 @@ void TextBox::update()
         {
             if (m_input->isKeyTappedOrRepeated(ck::ctok(c)))
             {
-                m_cursorShowLockTimer = CURSOR_SHOW_LOCK_DURATION;
-                m_cursor.show();
-                bool shift = m_input->isKeyDown(Onyx::Key::LeftShift) || 
-                    m_input->isKeyDown(Onyx::Key::RightShift) ||
-                    m_input->IsCapsLockOn();
-                if (shift) c = ck::shift(c);
-                addChar(c);
-                m_cursorIdx++;
-                updateTextDims();
-                updateTextPos();
-                updatePlTextPos();
-                shouldUpdateCursorPos = true;
+                bool cont = true;
+                if (c == 'v')
+                {
+                    if (m_input->isKeyDown(Onyx::Key::LeftControl) || m_input->isKeyDown(Onyx::Key::RightControl))
+                    {
+                        cont = false;
+                        std::string clipboard = Onyx::GetClipboardString();
+                        m_cursorShowLockTimer = CURSOR_SHOW_LOCK_DURATION;
+                        m_cursor.show();
+                        for (char _c : clipboard)
+                        {
+                            addChar(_c);
+                            m_cursorIdx++;
+                        }
+                        updateTextDims();
+                        updateTextPos();
+                        updatePlTextPos();
+                        shouldUpdateCursorPos = true;
+                    }
+                }
+                if (cont)
+                {
+                    m_cursorShowLockTimer = CURSOR_SHOW_LOCK_DURATION;
+                    m_cursor.show();
+                    bool shift = m_input->isKeyDown(Onyx::Key::LeftShift) || 
+                        m_input->isKeyDown(Onyx::Key::RightShift) ||
+                        m_input->IsCapsLockOn();
+                    if (shift) c = ck::shift(c);
+                    addChar(c);
+                    m_cursorIdx++;
+                    updateTextDims();
+                    updateTextPos();
+                    updatePlTextPos();
+                    shouldUpdateCursorPos = true;
+                }
             }
         }
 
@@ -205,12 +248,15 @@ void TextBox::update()
 
         if (shouldUpdateCursorPos) updateCursorPos();
     }
+    else if (m_text.getText().empty() && m_plText.isHidden()) m_plText.show();
 }
 
 void TextBox::render(const Onyx::Math::Mat4& ortho)
 {
     m_bg.render(ortho);
+    m_cursor.render(ortho);
     m_text.render(ortho);
+    m_plText.render(ortho);
 }
 
 void TextBox::addToRenderer(Onyx::Renderer* renderer)
@@ -235,12 +281,32 @@ void TextBox::unfocus()
     if (!m_focus) return;
     m_focus = false;
     m_cursor.hide();
-    if (m_text.getText().size() == 0) m_plText.show();
+    if (m_text.getText().empty()) m_plText.show();
+}
+
+void TextBox::hide()
+{
+    m_bg.hide();
+    m_cursor.hide();
+    m_text.hide();
+    m_plText.hide();
+}
+
+void TextBox::show()
+{
+    m_bg.show();
+    if (m_focus) m_cursor.show();
+    m_text.show();
+    if (m_text.getText().empty() && !m_focus) m_plText.show();
 }
 
 void TextBox::setPosition(const Vec2& pos)
 {
     m_bg.setPosition(IVec2(pos));
+    m_textShader.use();
+    m_textShader.setVec2("u_boundaryMid", Vec2(pos));
+    m_plTextShader.use();
+    m_plTextShader.setVec2("u_boundaryMid", Vec2(pos));
     updateTextPos();
     updateCursorPos();
     updatePlTextPos();
@@ -275,6 +341,11 @@ void TextBox::setScale(float scale)
     m_textWidth *= scale;
     m_textHeight *= scale;
     m_plTextWidth *= scale;
+
+    m_textShader.use();
+    m_textShader.setVec2("u_boundarySize", Vec2(m_bgWidth - m_padding * 2, m_bgHeight - m_padding * 2));
+    m_plTextShader.use();
+    m_plTextShader.setVec2("u_boundarySize", Vec2(m_bgWidth - m_padding * 2, m_bgHeight - m_padding * 2));
 }
 
 void TextBox::setBackgroundColor(const Vec4& color)
@@ -282,9 +353,43 @@ void TextBox::setBackgroundColor(const Vec4& color)
     m_bg.setColor(color);
 }
 
+void TextBox::setCursorColor(const Vec4& color)
+{
+    m_cursor.setColor(color);
+}
+
 void TextBox::setTextColor(const Vec4& color)
 {
     m_text.setColor(color);
+}
+
+void TextBox::setText(const std::string& text)
+{
+    m_text.setText(text);
+    updateTextDims();
+    updateTextPos();
+    m_cursorIdx = text.length();
+    updateCursorPos();
+}
+
+void TextBox::setPlaceholderTextColor(const Vec4& color)
+{
+    m_plText.setColor(color);
+}
+
+void TextBox::setPlaceholderText(const std::string& text)
+{
+    m_plText.setText(text);
+    updatePlTextDims();
+    updatePlTextPos();
+}
+
+void TextBox::setAlign(Align align)
+{
+    m_align = align;
+    updateTextPos();
+    updateCursorPos();
+    updatePlTextPos();
 }
 
 void TextBox::setWindow(Onyx::Window* window)
@@ -307,6 +412,14 @@ void TextBox::setInputHandler(Onyx::InputHandler* input)
     m_input = input;
 }
 
+void TextBox::setAllPtrs(Onyx::Window* window, Onyx::Cursor* normCursor, Onyx::Cursor* hoverCursor, Onyx::InputHandler* input)
+{
+    m_win = window;
+    m_normCursor = normCursor;
+    m_hoverCursor = hoverCursor;
+    m_input = input;
+}
+
 bool TextBox::isHovered() const
 {
     return m_hover;
@@ -315,6 +428,11 @@ bool TextBox::isHovered() const
 bool TextBox::isFocused() const
 {
     return m_focus;
+}
+
+bool TextBox::isHidden() const
+{
+    return m_bg.isHidden();
 }
 
 const std::string& TextBox::getText() const
@@ -461,6 +579,11 @@ void TextBox::SetHoverCursor(Onyx::Cursor* cursor, std::initializer_list<TextBox
 void TextBox::SetInputHandler(Onyx::InputHandler* handler, std::initializer_list<TextBox*> textBoxes)
 {
     for (TextBox* tb : textBoxes) tb->setInputHandler(handler);
+}
+
+void TextBox::SetAllPtrs(Onyx::Window* window, Onyx::Cursor* normCursor, Onyx::Cursor* hoverCursor, Onyx::InputHandler* input, std::initializer_list<TextBox*> textBoxes)
+{
+    for (TextBox* tb : textBoxes) tb->setAllPtrs(window, normCursor, hoverCursor, input);
 }
 
 void TextBox::addChar(char c)

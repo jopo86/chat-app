@@ -16,12 +16,14 @@ class TextButton
 {
 public:
     TextButton();
-    TextButton(const std::string& text, Onyx::Font& font, Align textAlign, const Onyx::Math::Vec4& btnColor, const Onyx::Math::Vec4& btnHoverColor, const Onyx::Math::Vec4& textColor, int padding = 10);
-    TextButton(const std::string& text, Onyx::Font& font, Align textAlign, const Onyx::Math::Vec4& btnColor, const Onyx::Math::Vec4& btnHoverColor, const Onyx::Math::Vec4& textColor, int btnWidth, int btnHeight, int padding = 10);
+    TextButton(const std::string& text, Onyx::Font& font, Align textAlign, const Onyx::Math::Vec4& btnColor, const Onyx::Math::Vec4& btnHoverColor, const Onyx::Math::Vec4& textColor, int padding, int zIndex = 0);
+    TextButton(const std::string& text, Onyx::Font& font, Align textAlign, const Onyx::Math::Vec4& btnColor, const Onyx::Math::Vec4& btnHoverColor, const Onyx::Math::Vec4& textColor, int btnWidth, int btnHeight, int padding, int zIndex = 0);
 
     void update();
     void render(const Onyx::Math::Mat4& ortho);
     void addToRenderer(Onyx::Renderer* renderer);
+    void hide();
+    void show();
 
     void setPosition(const Onyx::Math::Vec2& pos);
     void setScale(float scale);
@@ -32,8 +34,10 @@ public:
     void setNormalCursor(Onyx::Cursor* cursor);
     void setHoverCursor(Onyx::Cursor* cursor);
     void setInputHandler(Onyx::InputHandler* input);
+    void setAllPtrs(Onyx::Window* window, Onyx::Cursor* normCursor, Onyx::Cursor* hoverCursor, Onyx::InputHandler* input);
 
     bool isHovered() const;
+    bool isHidden() const;
     int getWidth() const;
     int getHeight() const;
     const Onyx::Math::Vec2& getPosition() const;
@@ -45,6 +49,7 @@ public:
     static void SetNormalCursor(Onyx::Cursor* cursor, std::initializer_list<TextButton*> buttons);
     static void SetHoverCursor(Onyx::Cursor* cursor, std::initializer_list<TextButton*> buttons);
     static void SetInputHandler(Onyx::InputHandler* handler, std::initializer_list<TextButton*> buttons);
+    static void SetAllPtrs(Onyx::Window* window, Onyx::Cursor* normCursor, Onyx::Cursor* hoverCursor, Onyx::InputHandler* input, std::initializer_list<TextButton*> buttons);
 
 private:
     int m_btnWidth, m_btnHeight;
